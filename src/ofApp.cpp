@@ -87,6 +87,7 @@ void ofApp::setup()
     // VRTracker stuff -----------------------------------------------
     // Setup OpenVR and connect to the SteamVR server.
     openvr.connect();
+    numConnectedVRTrackers = 0;
 
     // Add a listener to receive new data
     ofAddListener(openvr.newDataReceived, this, &ofApp::newDeviceData
@@ -729,13 +730,16 @@ void ofApp::newDeviceData(ofxOpenVRTrackerEventArgs& args) {
     }
     out = tmp;
 
-    if((*args.devices->getTrackers()).size()>0){
-        float x = (*args.devices->getTrackers())[0]->position.x;
-        float y = (*args.devices->getTrackers())[0]->position.y;
-        float z = (*args.devices->getTrackers())[0]->position.z;
-        cout << "position" << x << y << z << endl;
-    }
-    ofLogWarning("NewData");
+    // update for gui
+    numConnectedVRTrackers = (*args.devices->getTrackers()).size();
+
+    // per tracker
+    /*
+        - Serialnumber
+        - connected 0/1
+        - battery
+    */
+
 
     // Loop through clients
     for( int i = 0; i < clients.size(); ++i )
@@ -750,10 +754,10 @@ void ofApp::newDeviceData(ofxOpenVRTrackerEventArgs& args) {
                 // send messsage per tracker
                 //create OSC message
                 ofxOscMessage m;
-                m.setAddress("/vrtrackers");
+                m.setAddress("/vrtrackers/"+ofToString((*args.devices->getTrackers())[k]->serialNumber));
 
                 // name
-                m.addStringArg(ofToString((*args.devices->getTrackers())[k]->serialNumber));
+                //m.addStringArg(ofToString((*args.devices->getTrackers())[k]->serialNumber));
 
                 // position
                 m.addFloatArg((*args.devices->getTrackers())[k]->position.x);
@@ -949,6 +953,14 @@ void ofApp::doGui() {
             ImGui::Spacing();
             ImGui::Separator();
             ImGui::Spacing();
+        }
+        if ( ImGui::CollapsingHeader("VRTrackers Settings", NULL, ImGuiTreeNodeFlags_None) ){
+
+            ImGui::Columns(2, "VRTrackers info");
+            ImGui::Text("Num. VRTrackers: "); ImGui::NextColumn();
+            ImGui::Text(ofToString(numConnectedVRTrackers).c_str());
+            ImGui::Columns(1);
+
         }
         if ( ImGui::CollapsingHeader("log console", NULL, 0 ) )
         {
